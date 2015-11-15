@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+
+    <script src="easeljs-NEXT.combined.js"></script>
+    <script id="editable">
+        function showLove(){
+            this.__init();
+        }
+
+        var p = showLove.prototype;
+
+        p.__init = function () {
+            this.__initDatas();
+            this.__initHearts();
+        };
+
+        p.__initDatas = function () {
+            this.canvas;
+            this.stage;
+            this.container;
+            this.captureContainers;
+            this.captureIndex;
+        };
+
+        p.__initHeart = function () {
+            var heart = new createjs.Shape();
+            heart.graphics.beginFill(createjs.Graphics.getHSL(Math.random() * 30 - 45, 100, 50 + Math.random() * 30));
+            heart.graphics.moveTo(0, -12).curveTo(1, -20, 8, -20).curveTo(16, -20, 16, -10).curveTo(16, 0, 0, 12);
+            heart.graphics.curveTo(-16, 0, -16, -10).curveTo(-16, -20, -8, -20).curveTo(-1, -20, 0, -12);
+            heart.y = -100;
+            return heart;
+        };
+
+        p.__initHearts = function () {
+            var _this = this;
+            _this.canvas = document.getElementById("testCanvas");
+            _this.canvas.width = window.innerWidth;
+            _this.canvas.height = window.innerHeight;
+            _this.stage = new createjs.Stage(_this.canvas);
+
+            var w = _this.canvas.width;
+            var h = _this.canvas.height;
+
+            _this.container = new createjs.Container();
+            _this.stage.addChild(_this.container);
+            _this.captureContainers = [];
+            _this.captureIndex = 0;
+
+            for (var i = 0; i < 100; i++) {
+                var heart = _this.__initHeart();
+                _this.container.addChild(heart);
+            }
+
+            var text = new createjs.Text("the longer I'm with you\nthe more I love you", "bold 48px Arial", "#312");
+            text.textAlign = "center";
+            text.x = w / 2;
+            text.y = h / 2 - text.getMeasuredLineHeight();
+            _this.stage.addChild(text);
+
+            for (i = 0; i < 100; i++) {
+                var captureContainer = new createjs.Container();
+                captureContainer.cache(0, 0, w, h);
+                _this.captureContainers.push(captureContainer);
+            }
+
+            createjs.Ticker.timingMode = createjs.Ticker.RAF;
+            createjs.Ticker.addEventListener("tick", _this.__tick.bind(this));
+        };
+
+        p.__tick = function () {
+            var _this = this;
+            var w = _this.canvas.width;
+            var h = _this.canvas.height;
+            var l = _this.container.getNumChildren();
+
+            _this.captureIndex = (_this.captureIndex + 1) % _this.captureContainers.length;
+            _this.stage.removeChildAt(0);
+            var captureContainer = _this.captureContainers[_this.captureIndex];
+            _this.stage.addChildAt(captureContainer, 0);
+            captureContainer.addChild(_this.container);
+
+            // iterate through all the children and move them according to their velocity:
+            for (var i = 0; i < l; i++) {
+                var heart = _this.container.getChildAt(i);
+                if (heart.y < -50) {
+                    heart._x = Math.random() * w;
+                    heart.y = h * (1 + Math.random()) + 50;
+                    heart.perX = (1 + Math.random() * 2) * h;
+                    heart.offX = Math.random() * h;
+                    heart.ampX = heart.perX * 0.1 * (0.15 + Math.random());
+                    heart.velY = -Math.random() * 2 - 1;
+                    heart.scaleX = heart.scaleY = Math.random() * 2 + 1;
+                    heart._rotation = Math.random() * 40 - 20;
+                    heart.alpha = Math.random() * 0.75 + 0.05;
+                    heart.compositeOperation = Math.random() < 0.33 ? "lighter" : "source-over";
+                }
+                var int = (heart.offX + heart.y) / heart.perX * Math.PI * 2;
+                heart.y += heart.velY * heart.scaleX / 2;
+                heart.x = heart._x + Math.cos(int) * heart.ampX;
+                heart.rotation = heart._rotation + Math.sin(int) * 30;
+            }
+
+            captureContainer.updateCache("source-over");
+
+            // draw the updates to stage:
+            _this.stage.update();
+        };
+
+        window.onload = function () {
+            new showLove();
+        }
+    </script>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+<div>
+    <canvas id="testCanvas" style="background:#312"></canvas>
+</div>
+</body>
+</html>
